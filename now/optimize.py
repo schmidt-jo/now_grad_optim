@@ -1,5 +1,6 @@
 """NOW optimization pipeline."""
 import numpy as np
+import logging
 import time
 
 from .config import NOW_config
@@ -8,6 +9,7 @@ from .result import build_result
 from .solvers import get_solver
 from .utils import build_first_derivative_matrix, build_second_derivative_matrix
 
+logger = logging.getLogger(__name__)
 
 def get_initial_guess(config, iteration):
     """Generate initial guess, matching MATLAB getInitialGuess."""
@@ -68,9 +70,9 @@ def now_optimize(config=None, method='SLSQP', max_attempts=10, verbose=True):
 
             if verbose:
                 if iteration == 0:
-                    print(f'Optimizing {config.name}')
+                    logger.info(f'Optimizing {config.name}')
                 else:
-                    print(f'Optimizing {config.name}, attempt {iteration + 1}')
+                    logger.info(f'Optimizing {config.name}, attempt {iteration + 1}')
 
             t0 = time.perf_counter()
             res = solver.solve(problem, x0, options=solver_options)
@@ -78,7 +80,7 @@ def now_optimize(config=None, method='SLSQP', max_attempts=10, verbose=True):
             total_time += elapsed
 
             if verbose:
-                print(f'Optimization took {elapsed:.3f}s.')
+                logger.info(f'Optimization took {elapsed:.3f}s.')
 
             if res.success or res.fun < best_fval:
                 best_x = res.x
@@ -91,12 +93,12 @@ def now_optimize(config=None, method='SLSQP', max_attempts=10, verbose=True):
 
             if not config.redoIfFailed:
                 if verbose and not success:
-                    print('Optimization failed but will not be repeated!')
+                    logger.warning('Optimization failed but will not be repeated!')
                 break
 
         except Exception as e:
             if verbose:
-                print(f'Attempt {iteration + 1} failed: {e}')
+                logger.warning(f'Attempt {iteration + 1} failed: {e}')
             continue
 
     if best_x is None:
